@@ -20,7 +20,7 @@ const client = new MongoClient(uri, {
 });
 
 async function run() {
-    await client.connect();
+    // await client.connect();
     console.log("Connected to MongoDB");
 
     const database = client.db("database-management-project");
@@ -47,6 +47,43 @@ async function run() {
         const result = await taskCollection.updateOne({ _id: new ObjectId(taskId) }, { $set: { status } });
         res.send({ message: "Task status updated successfully", ...result });
     });
+
+    app.put("/tasks/:taskId", async (req, res) => {
+        try {
+            const taskId = req.params.taskId;
+            const data = req.body;
+            console.log(data);
+
+            const options = { upsert: true };
+
+            const result = await taskCollection.updateOne(
+                { _id: new ObjectId(taskId) },
+                data
+            );
+
+            res.send(result);
+        } catch (error) {
+            res.send(error);
+
+        }
+    });
+
+    app.delete("/tasks/:taskId", async (req, res) => {
+        try {
+            const taskId = req.params.taskId;
+
+            const result = await taskCollection.deleteOne({ _id: new ObjectId(taskId) });
+
+            if (result.deletedCount === 0) {
+                res.status(404).send({ error: "Task not found" });
+            } else {
+                res.send({ message: "Task deleted successfully", ...result });
+            }
+        } catch (error) {
+            res.send(error);
+        }
+    });
+
 
     app.get("/", (req, res) => {
         res.send("Server is running");
